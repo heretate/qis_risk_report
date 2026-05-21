@@ -46,14 +46,14 @@ All DataFrames are loaded from CSV at startup via thin helpers (`load_returns`, 
 
 *Input: `returns_df` as defined above.*
 
-- [ ] Return series calculation (daily, cumulative, annualised)
-- [ ] Volatility (rolling, annualised)
-- [ ] Sharpe ratio and Sortino ratio
-- [ ] Maximum drawdown and drawdown duration
-- [ ] Value-at-Risk: historical simulation and parametric (1-day and 10-day)
-- [ ] Conditional VaR / Expected Shortfall
-- [ ] Correlation matrix across the 4 QIS subcomponents
-- [ ] Unit tests for every metric with known-input / known-output fixtures
+- [x] Return series calculation (daily, cumulative, annualised)
+- [x] Volatility (rolling, annualised)
+- [x] Sharpe ratio and Sortino ratio
+- [x] Maximum drawdown and drawdown duration
+- [x] Value-at-Risk: historical simulation and parametric (1-day and 10-day)
+- [x] Conditional VaR / Expected Shortfall
+- [x] Correlation matrix across the 4 QIS subcomponents
+- [x] Unit tests for every metric with known-input / known-output fixtures
 
 ---
 
