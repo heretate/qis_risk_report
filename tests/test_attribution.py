@@ -14,7 +14,6 @@ Fixture: returns_contrib_10d.csv — sub1..sub4 chosen so that
 """
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pytest
 import statsmodels.api as sm
@@ -175,7 +174,10 @@ def test_cumulative_contribution_monotone_if_positive():
     """Cumulative series is non-decreasing when all daily returns are positive."""
     idx = pd.bdate_range("2024-01-02", periods=5)
     df = pd.DataFrame(
-        {"sub1": [0.01] * 5, "sub2": [0.01] * 5, "sub3": [0.01] * 5, "sub4": [0.01] * 5, "total": [0.01] * 5},
+        {
+            "sub1": [0.01] * 5, "sub2": [0.01] * 5, "sub3": [0.01] * 5,
+            "sub4": [0.01] * 5, "total": [0.01] * 5,
+        },
         index=idx,
     )
     cum = cumulative_contribution(df)
