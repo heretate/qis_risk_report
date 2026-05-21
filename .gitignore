@@ -42,7 +42,7 @@ coverage.xml
 notebooks/output/
 
 # Report output
-reports/
+/reports/
 
 # Secrets and config overrides
 config/settings.local.yaml
