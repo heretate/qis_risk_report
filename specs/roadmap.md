@@ -77,13 +77,13 @@ All DataFrames are loaded from CSV at startup via thin helpers (`load_returns`, 
 
 *Input: `returns_df`, `portfolio_returns_df`, and `weights_df` as defined above.*
 
-- [ ] Accept a broader portfolio positions file as additional input
-- [ ] Load and validate `weights_df`; expose a `load_weights(path) -> pd.DataFrame` helper
-- [ ] Weight-adjusted risk contribution: scale each instrument's standalone risk by its portfolio weight before decomposition
-- [ ] Marginal VaR contribution of the QIS strategy to the aggregate book
-- [ ] Component VaR decomposition (each QIS → strategy → portfolio), weighted by `weights_df`
-- [ ] Correlation of QIS returns with the rest of the portfolio
-- [ ] Diversification benefit estimate using weighted covariance
+- [x] Accept a broader portfolio positions file as additional input
+- [x] Load and validate `weights_df`; expose a `load_weights(path) -> pd.DataFrame` helper
+- [x] Weight-adjusted risk contribution: scale each instrument's standalone risk by its portfolio weight before decomposition
+- [x] Marginal VaR contribution of the QIS strategy to the aggregate book
+- [x] Component VaR decomposition (each QIS → strategy → portfolio), weighted by `weights_df`
+- [x] Correlation of QIS returns with the rest of the portfolio
+- [x] Diversification benefit estimate using weighted covariance
 
 ---
 

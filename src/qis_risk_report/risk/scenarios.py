@@ -25,7 +25,8 @@ class HistoricalScenario:
 class ShockParams:
     spot_shock: float | None = None   # additive shift applied to all returns
     vol_shock: float | None = None    # multiplicative scaling of all returns
-    corr_shock: float | None = None   # blend weight toward cross-sectional mean (0=no change, 1=full blend)
+    # blend weight toward cross-sectional mean (0=no change, 1=full blend)
+    corr_shock: float | None = None
 
 
 def default_scenarios() -> list[HistoricalScenario]:
@@ -46,7 +47,10 @@ def replay_scenario(
     sub_cols = [c for c in window.columns if c != "total"]
 
     pnl_by_component = {col: float(window[col].sum()) for col in sub_cols}
-    pnl_total = float(window["total"].sum()) if "total" in window.columns else sum(pnl_by_component.values()) / len(pnl_by_component)
+    if "total" in window.columns:
+        pnl_total = float(window["total"].sum())
+    else:
+        pnl_total = sum(pnl_by_component.values()) / len(pnl_by_component)
 
     return ScenarioResult(
         name=scenario.name,

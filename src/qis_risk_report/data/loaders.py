@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 
 
@@ -14,7 +16,11 @@ def load_returns(path: str) -> pd.DataFrame:
 
 def load_portfolio(path: str) -> pd.DataFrame:
     """Load daily returns for the broader portfolio instruments plus qis_total."""
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"portfolio_returns file not found: {path}")
     df = pd.read_csv(path, index_col=0, parse_dates=True)
+    if not isinstance(df.index, pd.DatetimeIndex):
+        raise ValueError(f"{path}: index must be a DatetimeIndex")
     if "qis_total" not in df.columns:
         raise ValueError(f"{path}: missing required column 'qis_total'")
     return df
@@ -22,6 +28,8 @@ def load_portfolio(path: str) -> pd.DataFrame:
 
 def load_weights(path: str) -> pd.DataFrame:
     """Load portfolio weights per instrument over time. Rows must sum to 1.0."""
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"weights file not found: {path}")
     df = pd.read_csv(path, index_col=0, parse_dates=True)
     _validate_weights(df)
     return df
@@ -57,6 +65,8 @@ def _validate_returns(df: pd.DataFrame) -> None:
 def _validate_weights(df: pd.DataFrame) -> None:
     if not isinstance(df.index, pd.DatetimeIndex):
         raise ValueError("weights_df: index must be a DatetimeIndex")
+    if "qis_total" not in df.columns:
+        raise ValueError("weights_df: missing required column 'qis_total'")
     row_sums = df.sum(axis=1)
     if not (row_sums.sub(1.0).abs() < 1e-6).all():
         raise ValueError("weights_df: rows must sum to 1.0")
