@@ -2,6 +2,7 @@ data:
   returns_path: data/returns.csv
   portfolio_returns_path: data/portfolio_returns.csv
   weights_path: data/weights.csv
+  factors_path: data/factors.csv
 
 reports:
   output_dir: reports

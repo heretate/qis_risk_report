@@ -63,11 +63,11 @@ All DataFrames are loaded from CSV at startup via thin helpers (`load_returns`, 
 
 *Input: `returns_df`; factor return series (carry, momentum, value, volatility) supplied as additional columns in the same CSV or a separate `factors_df` CSV with the same `DatetimeIndex`.*
 
-- [ ] Factor attribution: rolling OLS of each QIS against chosen FX risk factors (carry, momentum, value, volatility)
-- [ ] Contribution-to-return decomposition across the 4 subcomponents
-- [ ] Historical scenario replay: P&L impact of past stress events (GFC, COVID, 2022 rate shock, etc.)
-- [ ] Synthetic scenario engine: user-specified spot / vol / correlation shocks applied to current positions
-- [ ] `scenarios/` module with a clean API: `run_scenario(portfolio, shock_params) -> ScenarioResult`
+- [x] Factor attribution: rolling OLS of each QIS against chosen FX risk factors (carry, momentum, value, volatility)
+- [x] Contribution-to-return decomposition across the 4 subcomponents
+- [x] Historical scenario replay: P&L impact of past stress events (GFC, COVID, 2022 rate shock, etc.)
+- [x] Synthetic scenario engine: user-specified spot / vol / correlation shocks applied to current positions
+- [x] `scenarios/` module with a clean API: `run_scenario(portfolio, shock_params) -> ScenarioResult`
 
 ---
 
