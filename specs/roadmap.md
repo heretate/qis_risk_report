@@ -93,12 +93,12 @@ All DataFrames are loaded from CSV at startup via thin helpers (`load_returns`, 
 
 *Input: outputs of Phases 1–3; `returns_df` and `portfolio_returns_df` re-loaded from the same CSV paths for reproducibility.*
 
-- [ ] Jupyter notebook template (`notebooks/risk_report.ipynb`) with cells for each section (performance, risk, attribution, scenarios, portfolio contribution)
-- [ ] `papermill` integration: inject `run_date`, `config_path`, and output path as parameters
-- [ ] `nbconvert` HTML export with a clean stylesheet
-- [ ] `cli.py` `generate-report` command: load → compute → render → export in one call
-- [ ] Output naming convention: `reports/risk_report_YYYYMMDD.html`
-- [ ] Smoke test: run the CLI end-to-end against fixture data and assert a non-empty HTML file is produced
+- [x] Jupyter notebook template (`notebooks/risk_report.ipynb`) with cells for each section (performance, risk, attribution, scenarios, portfolio contribution)
+- [x] `papermill` integration: inject `run_date`, `config_path`, and output path as parameters
+- [x] `nbconvert` HTML export with a clean stylesheet
+- [x] `cli.py` `generate-report` command: load → compute → render → export in one call
+- [x] Output naming convention: `reports/risk_report_YYYYMMDD.html`
+- [x] Smoke test: run the CLI end-to-end against fixture data and assert a non-empty HTML file is produced
 
 ---
 
