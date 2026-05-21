@@ -1,68 +1,127 @@
 # Roadmap
 
-Each phase ships a working vertical slice. Later phases extend without breaking earlier ones.
+Phases are ordered by dependency: each phase unlocks the next. Scope within a phase can be parallelised.
+
+> **Convention — additional data requirements:** If any phase or task requires data not already defined in the Data Contract below, stop and ask before proceeding. Do not assume a schema, invent placeholder data, or silently expand the contract. Describe what is needed, why, and what shape it would take, then wait for confirmation before adding it to the contract or writing any code that depends on it.
 
 ---
 
-## Phase 1 — Core Pipeline (MVP)
+## Assumed Data Contract
 
-**Goal:** End-to-end pipeline from CSV to Excel report; validates the architecture before any external dependencies.
+*The data pipeline (Bloomberg/SQL connectors, caching, normalisation) is built separately and out of scope for this project. All phases assume the following pre-built inputs are available — either loaded from flat files or injected by the external pipeline.*
 
-- `data/loaders.py`: `load_csv` and `load_excel` returning a daily-returns `DataFrame`
-- `risk/metrics.py`: `RiskMetrics` computing annualized return, volatility, Sharpe ratio, max drawdown, historical VaR
-- `reports/generator.py`: `to_excel()` writing a formatted workbook via openpyxl
-- `cli.py`: `qis-risk-report generate <file> --format excel`
-- `config/settings.yaml`: output directory, date format
-- Full unit tests for metrics; integration test for the CSV → Excel path
+**`returns_df`** — daily returns for each QIS subcomponent and the aggregate strategy:
+
+| Field | Type | Notes |
+|---|---|---|
+| Index | `pd.DatetimeIndex` | Business-day frequency, tz-naive |
+| `<subcomponent>` × 4 | `float64` | Simple daily return per subcomponent (e.g. `0.0012` = +0.12%) |
+| `total` | `float64` | Aggregate QIS strategy daily return |
+
+**`portfolio_returns_df`** — daily returns for the broader portfolio (Phase 4 only):
+
+| Field | Type | Notes |
+|---|---|---|
+| Index | `pd.DatetimeIndex` | Same calendar as `returns_df` |
+| `<instrument>` × N | `float64` | Simple daily return per portfolio instrument |
+| `qis_total` | `float64` | QIS strategy return, duplicated here for marginal-VaR decomposition |
+
+**`weights_df`** — portfolio weights for each instrument over time (Phase 3 onwards):
+
+| Field | Type | Notes |
+|---|---|---|
+| Index | `pd.DatetimeIndex` | Business-day frequency, aligned to `portfolio_returns_df` |
+| `<instrument>` × N | `float64` | Decimal weight per instrument (e.g. `0.05` = 5%); rows sum to 1.0 |
+| `qis_total` | `float64` | Aggregate QIS weight within the broader portfolio |
+
+Weights represent end-of-day positions after any rebalancing. A static allocation may be expressed as a single-row DataFrame broadcast across all dates.
+
+All DataFrames are loaded from CSV at startup via thin helpers (`load_returns`, `load_portfolio`, `load_weights`); paths are specified in `config/settings.yaml`.
 
 ---
 
-## Phase 2 — HTML & PDF Reports
+## Phase 1 — Core Risk Metrics
 
-**Goal:** Parity with Excel; adds read-only presentation-quality reports.
+*Goal: daily risk-return numbers for each QIS subcomponent and the aggregate strategy.*
 
-- Jinja2 templates in `reports/templates/`
-- `to_html()` and `to_pdf()` on `ReportGenerator`
-- CLI `--format html|pdf` options
-- Tests covering template rendering with a fixture DataFrame
+*Input: `returns_df` as defined above.*
+
+- [ ] Return series calculation (daily, cumulative, annualised)
+- [ ] Volatility (rolling, annualised)
+- [ ] Sharpe ratio and Sortino ratio
+- [ ] Maximum drawdown and drawdown duration
+- [ ] Value-at-Risk: historical simulation and parametric (1-day and 10-day)
+- [ ] Conditional VaR / Expected Shortfall
+- [ ] Correlation matrix across the 4 QIS subcomponents
+- [ ] Unit tests for every metric with known-input / known-output fixtures
+
+---
+
+## Phase 2 — Attribution & Scenario Analysis
+
+*Goal: explain where returns come from and stress-test under adverse conditions.*
+
+*Input: `returns_df`; factor return series (carry, momentum, value, volatility) supplied as additional columns in the same CSV or a separate `factors_df` CSV with the same `DatetimeIndex`.*
+
+- [ ] Factor attribution: rolling OLS of each QIS against chosen FX risk factors (carry, momentum, value, volatility)
+- [ ] Contribution-to-return decomposition across the 4 subcomponents
+- [ ] Historical scenario replay: P&L impact of past stress events (GFC, COVID, 2022 rate shock, etc.)
+- [ ] Synthetic scenario engine: user-specified spot / vol / correlation shocks applied to current positions
+- [ ] `scenarios/` module with a clean API: `run_scenario(portfolio, shock_params) -> ScenarioResult`
 
 ---
 
 ## Phase 3 — Portfolio Risk Contribution
 
-**Goal:** Quantify how the QIS strategy contributes to the broader portfolio's risk.
+*Goal: quantify the QIS strategy's marginal risk inside the broader portfolio.*
 
-- Marginal and component VaR relative to a benchmark portfolio
-- Correlation and beta to portfolio returns
-- New `risk/portfolio.py` module; results surfaced in existing reports
+*Input: `returns_df`, `portfolio_returns_df`, and `weights_df` as defined above.*
 
----
-
-## Phase 4 — Subcomponent Attribution
-
-**Goal:** Decompose aggregate strategy performance across the four constituent QIS.
-
-- Per-QIS return, vol, Sharpe, and drawdown columns in reports
-- Aggregation vs. individual contribution waterfall
-- CLI `--breakdown` flag to toggle subcomponent detail
+- [ ] Accept a broader portfolio positions file as additional input
+- [ ] Load and validate `weights_df`; expose a `load_weights(path) -> pd.DataFrame` helper
+- [ ] Weight-adjusted risk contribution: scale each instrument's standalone risk by its portfolio weight before decomposition
+- [ ] Marginal VaR contribution of the QIS strategy to the aggregate book
+- [ ] Component VaR decomposition (each QIS → strategy → portfolio), weighted by `weights_df`
+- [ ] Correlation of QIS returns with the rest of the portfolio
+- [ ] Diversification benefit estimate using weighted covariance
 
 ---
 
-## Phase 5 — Scenario Analysis
+## Phase 4 — Report Generation
 
-**Goal:** Stress-test the strategy and its subcomponents under defined market regimes.
+*Goal: automated, consistently formatted HTML report delivered from a single CLI command.*
 
-- Historical scenario replay (e.g., COVID drawdown, 2022 rates shock) using date-range slicing
-- Synthetic scenario construction (parallel shift, correlation breakdown)
-- Scenario results as a separate sheet/section in Excel and HTML reports
-- `risk/scenarios.py` module
+*Input: outputs of Phases 1–3; `returns_df` and `portfolio_returns_df` re-loaded from the same CSV paths for reproducibility.*
+
+- [ ] Jupyter notebook template (`notebooks/risk_report.ipynb`) with cells for each section (performance, risk, attribution, scenarios, portfolio contribution)
+- [ ] `papermill` integration: inject `run_date`, `config_path`, and output path as parameters
+- [ ] `nbconvert` HTML export with a clean stylesheet
+- [ ] `cli.py` `generate-report` command: load → compute → render → export in one call
+- [ ] Output naming convention: `reports/risk_report_YYYYMMDD.html`
+- [ ] Smoke test: run the CLI end-to-end against fixture data and assert a non-empty HTML file is produced
 
 ---
 
-## Phase 6 — Factor Attribution
+## Phase 5 — Automation & Hardening
 
-**Goal:** Explain return drivers via regression on common FX risk factors.
+*Goal: production-grade reliability for daily scheduled runs.*
 
-- OLS factor model in `risk/attribution.py` using `statsmodels`
-- Factor loadings and R² reported per QIS and for the aggregate strategy
-- Attribution table added to all report formats
+*Input: same CSV paths as all prior phases; no change to the data contract.*
+
+- [ ] Structured logging (`logging` module) with log rotation; errors surfaced clearly in the CLI exit code
+- [ ] Retry logic and clear error messages for missing or malformed input files
+- [ ] Data-quality checks: missing dates, stale prices, outlier returns — fail fast with descriptive errors
+- [ ] Windows Task Scheduler (or cron) configuration documented in `README`
+- [ ] `--dry-run` flag: validates data availability and config without producing a report
+- [ ] End-to-end integration test using full fixture dataset
+- [ ] Version pinning audit and dependency review
+
+---
+
+## Out of Scope (for now)
+
+- Data pipeline / connectors (Bloomberg, SQL, CSV normalisation) — built externally
+- Real-time / intraday monitoring
+- Interactive web dashboard
+- Automated email distribution of reports
+- Multi-user access control

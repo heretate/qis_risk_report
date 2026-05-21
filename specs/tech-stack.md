@@ -1,57 +1,67 @@
 # Tech Stack
 
-## Language & Runtime
+## Runtime
 
-- **Python 3.11+** — type-hint support, `tomllib` stdlib, performance improvements
-- **pyproject.toml** (setuptools) — single source for metadata, deps, and entry points
-
-## Data Ingestion
-
-| Source | Library | Notes |
+| Layer | Choice | Rationale |
 |---|---|---|
-| CSV / Excel files | `pandas` | `read_csv` / `read_excel`; thin loader wrappers in `data/loaders.py` |
-| Bloomberg Terminal / B-PIPE | `blpapi` | Optional extra; context-manager client in `data/bloomberg.py` |
+| Language | Python 3.10+ | Team standard; strong quant ecosystem |
+| Dependency management | pip + `requirements.txt` | Team standard; no additional toolchain needed |
+| Entry point | CLI via `click` | Scheduled via Windows Task Scheduler or cron; human-runnable |
 
-## Risk Computation
+## Data Layer
 
-| Metric | Library |
+| Concern | Library / Tool |
 |---|---|
-| Annualized return, volatility, Sharpe | `numpy`, `pandas` |
-| Max drawdown | `pandas` (cumulative max rolling) |
-| VaR (historical) | `numpy.percentile` |
-| Factor attribution (future) | `statsmodels` OLS |
+| Bloomberg real-time / historical data | `blpapi` (Bloomberg Python API) |
+| SQL databases (positions, P&L, reference) | `SQLAlchemy` + `pyodbc` or `psycopg2` depending on engine |
+| CSV / flat-file ingestion | `pandas.read_csv` with configurable path/glob patterns |
+| Data modeling & transformation | `pandas`, `numpy` |
 
-## Report Generation
+Connection credentials and DSNs are managed through environment variables or a `config/settings.yaml` file, never hard-coded.
 
-Both output formats are first-class deliverables.
+## Risk & Analytics
 
-| Format | Library | Template |
-|---|---|---|
-| Excel | `openpyxl` | Programmatic sheets; no Jinja2 |
-| HTML | `Jinja2` | Templates in `reports/templates/` |
-| PDF | `WeasyPrint` | Rendered from the same HTML template |
+| Concern | Library |
+|---|---|
+| Core numerics | `numpy`, `scipy` |
+| Time-series risk metrics (VaR, vol, Sharpe, drawdown) | `pandas` + custom `risk/` module |
+| Factor attribution | `statsmodels` (OLS / rolling regression) |
+| Scenario analysis (historical + synthetic) | custom `scenarios/` module built on `pandas` |
+| Portfolio-level risk contribution | custom module using covariance decomposition |
 
-`ReportGenerator` exposes `to_excel()`, `to_html()`, and `to_pdf()` from a single class.
+## Reporting
 
-## CLI
-
-- **Click** — `qis-risk-report generate <file> [--format excel|html|pdf]`
-
-## Configuration
-
-- **PyYAML** — `config/settings.yaml` (committed) + `config/settings.local.yaml` (gitignored override)
+| Concern | Library / Tool |
+|---|---|
+| Report authoring | Jupyter Notebook (`.ipynb` templates) |
+| HTML rendering | `nbconvert` (`--to html`) |
+| Charts & visualisations | `matplotlib`, `seaborn`; optionally `plotly` for interactivity |
+| Table formatting | `jinja2` for HTML snippets inside notebooks |
+| Parameterisation | `papermill` to inject run-date and config into notebook before execution |
 
 ## Testing & Quality
 
-| Tool | Purpose |
+| Concern | Tool |
 |---|---|
-| `pytest` | Unit and integration tests |
-| `pytest-cov` | Coverage reporting |
-| `ruff` | Lint + format (replaces flake8, isort, black) |
-| `mypy` | Static type checking |
+| Unit & integration tests | `pytest` |
+| Fixtures / mock data | `pytest` fixtures + small CSV snapshots committed to `tests/fixtures/` |
+| Linting | `ruff` |
+| Type hints | `mypy` (optional, incremental) |
 
-## Optional / Future
+## Project Layout (target)
 
-- `statsmodels` — regression-based factor attribution
-- `scipy` — parametric VaR, CVaR, correlation matrices
-- `matplotlib` / `plotly` — embedded charts in HTML reports
+```
+qis_risk_report/
+├── config/
+│   └── settings.yaml          # DSNs, paths, strategy metadata
+├── notebooks/
+│   └── risk_report.ipynb      # Parameterised report template
+├── src/qis_risk_report/
+│   ├── cli.py                 # click entry point
+│   ├── data/                  # bloomberg.py, sql.py, loaders.py
+│   ├── risk/                  # metrics.py, attribution.py, scenarios.py
+│   └── reports/               # generator.py (papermill + nbconvert)
+├── tests/
+├── requirements.txt
+└── pyproject.toml
+```
