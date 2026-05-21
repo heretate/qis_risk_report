@@ -9,7 +9,7 @@ def execute_notebook(config_path: str, run_date: str, executed_nb_path: str) -> 
     """Execute the report notebook via papermill, saving to executed_nb_path."""
     import papermill as pm
 
-    cfg = yaml.safe_load(Path(config_path).read_text())
+    cfg = yaml.safe_load(Path(config_path).read_text(encoding="utf-8-sig"))
     template = cfg["reports"]["notebook_template"]
     pm.execute_notebook(
         template,
@@ -43,7 +43,7 @@ def generate(
     run_date = run_date or _date.today().isoformat()
     date_compact = run_date.replace("-", "")
 
-    cfg = yaml.safe_load(Path(config_path).read_text())
+    cfg = yaml.safe_load(Path(config_path).read_text(encoding="utf-8-sig"))
     out_dir = Path(output_dir or cfg["reports"].get("output_dir", "reports"))
     out_dir.mkdir(parents=True, exist_ok=True)
 

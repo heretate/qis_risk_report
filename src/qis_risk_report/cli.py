@@ -21,7 +21,7 @@ def cli():
 @click.option("--dry-run", is_flag=True, help="Validate inputs without producing a report.")
 def generate_report(config: str, run_date: str | None, output_dir: str | None, dry_run: bool):
     """Load data, compute risk metrics, and export an HTML report."""
-    cfg = yaml.safe_load(Path(config).read_text())
+    cfg = yaml.safe_load(Path(config).read_text(encoding="utf-8-sig"))
 
     from qis_risk_report.data.loaders import load_returns
     load_returns(cfg["data"]["returns_path"])
