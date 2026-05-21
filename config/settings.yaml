@@ -1,0 +1,16 @@
+data:
+  returns_path: data/returns.csv
+  portfolio_returns_path: data/portfolio_returns.csv
+  weights_path: data/weights.csv
+
+reports:
+  output_dir: reports
+  notebook_template: notebooks/risk_report.ipynb
+
+strategy:
+  name: QIS FX Strategy
+  subcomponents:
+    - sub1
+    - sub2
+    - sub3
+    - sub4
