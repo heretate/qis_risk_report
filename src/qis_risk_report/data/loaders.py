@@ -27,6 +27,26 @@ def load_weights(path: str) -> pd.DataFrame:
     return df
 
 
+def load_factors(path: str) -> pd.DataFrame:
+    """Load factor returns for attribution analysis.
+
+    Expected columns: carry, momentum, value, volatility
+    Index: DatetimeIndex, same date range as returns_df, tz-naive
+    """
+    df = pd.read_csv(path, index_col=0, parse_dates=True)
+    _validate_factors(df)
+    return df
+
+
+def _validate_factors(df: pd.DataFrame) -> None:
+    required = {"carry", "momentum", "value", "volatility"}
+    missing = required - set(df.columns)
+    if missing:
+        raise ValueError(f"factors_df: missing columns {missing}")
+    if not isinstance(df.index, pd.DatetimeIndex):
+        raise ValueError("factors_df: index must be a DatetimeIndex")
+
+
 def _validate_returns(df: pd.DataFrame) -> None:
     if "total" not in df.columns:
         raise ValueError("returns_df: missing required column 'total'")
