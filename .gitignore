@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Project-specific
+output/
+*.xlsx
+*.pdf
+*.log
+config/settings.local.yaml
+
+# Bloomberg API
+blpapi*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
