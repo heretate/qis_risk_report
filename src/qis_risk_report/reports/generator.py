@@ -23,7 +23,7 @@ def export_html(executed_nb_path: str, html_output_path: str) -> Path:
     """Convert an executed notebook to an HTML file using nbconvert."""
     from nbconvert import HTMLExporter
 
-    exporter = HTMLExporter()
+    exporter = HTMLExporter(exclude_input=True)
     body, _ = exporter.from_filename(executed_nb_path)
     out = Path(html_output_path)
     out.write_text(body, encoding="utf-8")

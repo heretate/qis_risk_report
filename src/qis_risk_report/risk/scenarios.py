@@ -32,9 +32,11 @@ class ShockParams:
 def default_scenarios() -> list[HistoricalScenario]:
     """Default historical scenario registry (can be extended via settings.yaml)."""
     return [
-        HistoricalScenario("GFC Peak Stress",     "2008-09-01", "2008-11-28"),
-        HistoricalScenario("COVID Crash",          "2020-02-19", "2020-03-23"),
-        HistoricalScenario("2022 Rate Shock",      "2022-01-03", "2022-06-30"),
+        HistoricalScenario("GFC",                "2008-10-01", "2009-03-31"),
+        HistoricalScenario("EUR Sovereign Debt", "2011-05-01", "2011-11-30"),
+        HistoricalScenario("CNY Devaluation",    "2015-08-01", "2015-08-31"),
+        HistoricalScenario("COVID Crash",        "2020-02-01", "2020-03-31"),
+        HistoricalScenario("2022 Rate Shock",    "2022-01-03", "2022-10-31"),
     ]
 
 
