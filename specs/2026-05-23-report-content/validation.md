@@ -29,40 +29,40 @@ This test must:
 Each chart below must be rendered and embedded in the HTML output. Verify by inspecting the HTML file (`BeautifulSoup` in the smoke test, or manually opening in a browser).
 
 ### Section 0 — Header
-- [ ] KPI strip table is present and all 7 columns are non-null
+- [x] KPI strip table is present and all 7 columns are non-null
 
 ### Section 1 — Performance
-- [ ] P-1: Cumulative return chart (1 figure, 5 lines)
-- [ ] P-2: Monthly heatmap (1 figure, 5 subplot rows)
-- [ ] P-3: Daily return bar chart (1 figure, 5 panels)
-- [ ] Performance summary table (6 columns × 5 rows minimum)
+- [x] P-1: Cumulative return chart (1 figure, 5 lines)
+- [x] P-2: Monthly heatmap (1 figure, 5 subplot rows)
+- [x] P-3: Daily return bar chart (1 figure, 5 panels)
+- [x] Performance summary table (6 columns × 5 rows minimum)
 
 ### Section 2 — Risk Metrics
-- [ ] R-1: Rolling volatility chart (two windows visible)
-- [ ] R-2: Drawdown chart (two panels)
-- [ ] R-3: Return distribution (5 subplots, VaR lines present)
-- [ ] R-4: Correlation heatmap (4×4 annotated grid)
-- [ ] R-5: Rolling pairwise correlation (6 lines)
-- [ ] Risk summary table (9 metrics × 5 series minimum)
+- [x] R-1: Rolling volatility chart (two windows visible)
+- [x] R-2: Drawdown chart (two panels)
+- [x] R-3: Return distribution (5 subplots, VaR lines present)
+- [x] R-4: Correlation heatmap (4×4 annotated grid)
+- [x] R-5: Rolling pairwise correlation (6 lines)
+- [x] Risk summary table (9 metrics × 5 series minimum)
 
 ### Section 3 — Factor Attribution
-- [ ] A-1: Rolling factor betas — 4 figures (one per subcomponent)
-- [ ] A-2: YTD attribution stacked bar (4 bars + legend)
-- [ ] A-3: Subcomponent contribution area chart
-- [ ] Attribution summary table (factor betas, R², attributed YTD, alpha)
+- [x] A-1: Rolling factor betas — 4 figures (one per subcomponent)
+- [x] A-2: YTD attribution stacked bar (4 bars + legend)
+- [x] A-3: Subcomponent contribution area chart
+- [x] Attribution summary table (factor betas, R², attributed YTD, alpha)
 
 ### Section 4 — Scenario Analysis
-- [ ] S-1: Scenario impact bar chart (5 scenario groups)
-- [ ] S-2: GFC stress path chart
-- [ ] S-2: COVID stress path chart
-- [ ] Historical scenarios table (5 rows, 7+ columns)
-- [ ] Synthetic shock sensitivity grid (rendered as styled DataFrame)
+- [x] S-1: Scenario impact bar chart (5 scenario groups)
+- [x] S-2: GFC stress path chart
+- [x] S-2: COVID stress path chart
+- [x] Historical scenarios table (5 rows, 7+ columns)
+- [x] Synthetic shock sensitivity grid (rendered as styled DataFrame)
 
 ### Section 5 — Portfolio Risk Contribution
-- [ ] C-1: Component VaR horizontal bar chart
-- [ ] C-2: Rolling QIS–portfolio correlation (5 lines)
-- [ ] C-3: Diversification benefit over time (1 line + zero reference)
-- [ ] Portfolio contribution summary table (6 metrics)
+- [x] C-1: Component VaR horizontal bar chart
+- [x] C-2: Rolling QIS–portfolio correlation (5 lines)
+- [x] C-3: Diversification benefit over time (1 line + zero reference)
+- [x] Portfolio contribution summary table (6 metrics)
 
 **Total: 22 charts + 4 tables + 1 KPI strip**
 

@@ -13,6 +13,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["slow: end-to-end tests that execute the full notebook pipeline"]
 
 [tool.ruff]
 src = ["src"]
