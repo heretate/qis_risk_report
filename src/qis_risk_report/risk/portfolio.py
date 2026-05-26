@@ -1,4 +1,6 @@
 """Phase 3 — portfolio risk contribution metrics."""
+from __future__ import annotations
+
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
@@ -66,11 +68,11 @@ def component_var(
 
 
 def qis_portfolio_correlation(
-    returns_df: pd.DataFrame,
+    qis_return_df: pd.DataFrame,
     portfolio_returns: pd.DataFrame,
     weights: pd.Series | None = None,
 ) -> pd.Series:
-    """Pearson correlation of each column in returns_df with the portfolio aggregate.
+    """Pearson correlation of each column in qis_return_df with the portfolio aggregate.
 
     The aggregate is portfolio_returns @ weights (equal-weight if weights is None).
     """
@@ -80,9 +82,87 @@ def qis_portfolio_correlation(
     else:
         w = weights.reindex(portfolio_returns.columns)
     r_agg = portfolio_returns @ w
-    result = returns_df.corrwith(r_agg)
+    result = qis_return_df.corrwith(r_agg)
     result.name = "correlation"
     return result
+
+
+def compute_portfolio_contribution_at_weight(
+    qis_return_df: pd.DataFrame,
+    portfolio_return_df: pd.DataFrame,
+    weights_df: pd.DataFrame,
+    qis_weight: float,
+    confidence: float = 0.95,
+) -> dict:
+    """Compute portfolio risk contribution metrics at a hypothetical QIS allocation.
+
+    Builds a blended portfolio over the common date range (2020-onward overlap).
+    Non-QIS instrument weights are scaled proportionally to sum to (1 - qis_weight).
+
+    Returns dict with keys: standalone_var, marginal_var, component_var_share,
+    correlation, diversification_benefit.
+    """
+    from qis_risk_report.data.loaders import common_date_range
+    from qis_risk_report.risk.metrics import historical_var
+
+    start, end = common_date_range(qis_return_df, portfolio_return_df)
+    qis_slice = qis_return_df.loc[start:end, "total"]
+    port_slice = portfolio_return_df.loc[start:end]
+
+    non_qis_cols = [c for c in port_slice.columns if c != "qis_total"]
+    last_w = weights_df.iloc[-1]
+    non_qis_w = last_w.reindex(non_qis_cols).fillna(0)
+    non_qis_total = float(non_qis_w.sum())
+    if non_qis_total > 0:
+        non_qis_w = non_qis_w * (1.0 - qis_weight) / non_qis_total
+
+    blended_cols = non_qis_cols + ["qis_total"]
+    blended_df = port_slice[blended_cols].copy()
+    blended_df["qis_total"] = qis_slice.values
+    blended_w = pd.concat([non_qis_w, pd.Series({"qis_total": qis_weight})])
+
+    qis_standalone_var = historical_var(qis_slice, confidence=confidence)
+    mv = marginal_var(blended_df, blended_w, confidence=confidence)
+    qis_mv = float(mv.get("qis_total", float("nan")))
+    cv = component_var(blended_df, blended_w, confidence=confidence)
+    cv_total = float(cv.sum())
+    qis_cv = float(cv.get("qis_total", float("nan")))
+    qis_cv_share = qis_cv / cv_total if cv_total != 0 else float("nan")
+    r_p = blended_df @ blended_w
+    trailing_corr = float(qis_slice.corr(r_p))
+    try:
+        div_benefit = diversification_benefit(blended_df, blended_w, confidence=confidence)
+    except ValueError:
+        div_benefit = float("nan")
+
+    return {
+        "standalone_var": qis_standalone_var,
+        "marginal_var": qis_mv,
+        "component_var_share": qis_cv_share,
+        "correlation": trailing_corr,
+        "diversification_benefit": div_benefit,
+    }
+
+
+def build_portfolio_contribution_grid(
+    qis_return_df: pd.DataFrame,
+    portfolio_return_df: pd.DataFrame,
+    weights_df: pd.DataFrame,
+    weights_list: list[float],
+    confidence: float = 0.95,
+) -> pd.DataFrame:
+    """Build a sensitivity grid of portfolio risk metrics across hypothetical QIS weights.
+
+    Rows: each weight in weights_list (formatted as '1.0%' etc.).
+    Columns: standalone_var, marginal_var, component_var_share, correlation,
+             diversification_benefit.
+    """
+    rows = {}
+    for w in weights_list:
+        rows[f"{w:.1%}"] = compute_portfolio_contribution_at_weight(
+            qis_return_df, portfolio_return_df, weights_df, w, confidence=confidence
+        )
+    return pd.DataFrame(rows).T
 
 
 def diversification_benefit(

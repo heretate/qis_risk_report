@@ -11,6 +11,7 @@ class ScenarioResult:
     name: str
     pnl_total: float
     pnl_by_component: dict[str, float]
+    portfolio_pnl: float | None = None
     metadata: dict = field(default_factory=dict)
 
 
@@ -42,10 +43,10 @@ def default_scenarios() -> list[HistoricalScenario]:
 
 def replay_scenario(
     scenario: HistoricalScenario,
-    returns_df: pd.DataFrame,
+    qis_return_df: pd.DataFrame,
 ) -> ScenarioResult:
-    """Filter returns_df to the scenario date range and compute P&L."""
-    window = returns_df.loc[scenario.start : scenario.end]
+    """Filter qis_return_df to the scenario date range and compute P&L."""
+    window = qis_return_df.loc[scenario.start : scenario.end]
     sub_cols = [c for c in window.columns if c != "total"]
 
     pnl_by_component = {col: float(window[col].sum()) for col in sub_cols}
@@ -64,21 +65,29 @@ def replay_scenario(
 
 def replay_all(
     scenarios: list[HistoricalScenario],
-    returns_df: pd.DataFrame,
+    qis_return_df: pd.DataFrame,
 ) -> list[ScenarioResult]:
     """Replay all scenarios and return a list of ScenarioResults."""
-    return [replay_scenario(s, returns_df) for s in scenarios]
+    return [replay_scenario(s, qis_return_df) for s in scenarios]
+
+
+_PORTFOLIO_DATA_START = pd.Timestamp("2020-01-01")
 
 
 def run_scenario(
     portfolio: pd.DataFrame,
     shock_params: ShockParams,
+    portfolio_return_df: pd.DataFrame | None = None,
 ) -> ScenarioResult:
     """Apply shocks to portfolio returns and compute P&L.
 
     spot_shock  — additive parallel shift: r + shock
     vol_shock   — multiplicative scaling: r * (1 + shock)
     corr_shock  — blend each column toward cross-sectional mean by weight shock
+
+    portfolio_return_df — when provided and the portfolio index starts from 2020 or later,
+        the same shocks are applied to compute a portfolio-level P&L stored in
+        ScenarioResult.portfolio_pnl; otherwise portfolio_pnl is None.
     """
     shocked = portfolio.copy().astype(float)
 
@@ -98,9 +107,26 @@ def run_scenario(
     pnl_by_component = {col: float(shocked[col].sum()) for col in shocked.columns}
     pnl_total = sum(pnl_by_component.values()) / n
 
+    portfolio_pnl: float | None = None
+    if portfolio_return_df is not None and portfolio_return_df.index[0] >= _PORTFOLIO_DATA_START:
+        shocked_port = portfolio_return_df.copy().astype(float)
+        if shock_params.spot_shock is not None:
+            shocked_port = shocked_port + shock_params.spot_shock
+        if shock_params.vol_shock is not None:
+            shocked_port = shocked_port * (1.0 + shock_params.vol_shock)
+        if shock_params.corr_shock is not None:
+            alpha_p = shock_params.corr_shock
+            cross_mean_p = shocked_port.mean(axis=1)
+            for col in shocked_port.columns:
+                shocked_port[col] = shocked_port[col] * (1.0 - alpha_p) + cross_mean_p * alpha_p
+        np_cols = len(shocked_port.columns)
+        port_component_pnls = sum(float(shocked_port[col].sum()) for col in shocked_port.columns)
+        portfolio_pnl = float(port_component_pnls / np_cols)
+
     return ScenarioResult(
         name="synthetic",
         pnl_total=pnl_total,
         pnl_by_component=pnl_by_component,
+        portfolio_pnl=portfolio_pnl,
         metadata={"shock_params": shock_params},
     )

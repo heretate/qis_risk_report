@@ -15,11 +15,10 @@ pytest.importorskip("nbconvert", reason="nbconvert required for HTML export")
 _SECTION_HEADERS = [
     "1. Performance",
     "2. Risk Metrics",
-    "3. Factor Attribution",
-    "4. Scenario Analysis",
-    "5. Portfolio Risk Contribution",
+    "3. Scenario Analysis",
+    "4. Portfolio Risk Contribution",
 ]
-_MIN_CHARTS = 20
+_MIN_CHARTS = 12
 _MIN_HTML_BYTES = 500_000
 
 
@@ -37,25 +36,17 @@ def smoke_html(tmp_path_factory):
     n = len(dates)
 
     sub_ret = rng.normal(0.0003, 0.007, (n, 4))
-    returns_df = pd.DataFrame(sub_ret, index=dates, columns=["sub1", "sub2", "sub3", "sub4"])
-    returns_df.index.name = "date"
-    returns_df["total"] = returns_df.mean(axis=1)
-    returns_df.to_csv(data_dir / "returns.csv")
-
-    factors_df = pd.DataFrame(
-        rng.normal(0, 0.005, (n, 4)),
-        index=dates,
-        columns=["carry", "momentum", "value", "volatility"],
-    )
-    factors_df.index.name = "date"
-    factors_df.to_csv(data_dir / "factors.csv")
+    qis_returns_df = pd.DataFrame(sub_ret, index=dates, columns=["sub1", "sub2", "sub3", "sub4"])
+    qis_returns_df.index.name = "date"
+    qis_returns_df["total"] = qis_returns_df.mean(axis=1)
+    qis_returns_df.to_csv(data_dir / "returns.csv")
 
     port_df = pd.DataFrame(
         rng.normal(0.0002, 0.010, (n, 5)),
         index=dates,
         columns=["inst1", "inst2", "inst3", "inst4", "inst5"],
     )
-    port_df["qis_total"] = returns_df["total"].values
+    port_df["qis_total"] = qis_returns_df["total"].values
     port_df.index.name = "date"
     port_df.to_csv(data_dir / "portfolio_returns.csv")
 
@@ -69,10 +60,9 @@ def smoke_html(tmp_path_factory):
 
     cfg = {
         "data": {
-            "returns_path": str(data_dir / "returns.csv"),
+            "qis_returns_path": str(data_dir / "returns.csv"),
             "portfolio_returns_path": str(data_dir / "portfolio_returns.csv"),
             "weights_path": str(data_dir / "weights.csv"),
-            "factors_path": str(data_dir / "factors.csv"),
         },
         "reports": {
             "output_dir": str(reports_dir),

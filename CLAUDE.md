@@ -59,13 +59,15 @@ python -m qis_risk_report generate-report --dry-run
 
 All phases consume pre-built DataFrames loaded from CSV at startup via thin helpers (`load_returns`, `load_portfolio`, `load_weights`). Paths are in `config/settings.yaml`. **Never assume a new schema or silently expand the contract** — if new data is needed, stop and describe what is needed and why before writing any code that depends on it.
 
-| DataFrame | Contents | Phases |
-|---|---|---|
-| `returns_df` | Daily returns for 4 QIS subcomponents + `total`; `pd.DatetimeIndex`, tz-naive | All |
-| `portfolio_returns_df` | Daily returns for broader portfolio instruments + `qis_total` | 3+ |
-| `weights_df` | Portfolio weights per instrument; rows sum to 1.0 | 3+ |
+| DataFrame | Contents | Date Range | Config Key |
+|---|---|---|---|
+| `qis_return_df` | Daily returns for 4 QIS subcomponents + `total`; `pd.DatetimeIndex`, tz-naive | Full history | `qis_returns_path` |
+| `portfolio_return_df` | Daily returns for broader portfolio instruments + `qis_total` | 2020-onward only — do not back-fill | `portfolio_returns_path` |
+| `weights_df` | Portfolio weights per instrument; rows sum to 1.0 | Latest row used | `weights_path` |
 
-Factor data (carry, momentum, value, volatility) is supplied as additional columns in `returns_df` or a separate `factors_df` CSV with the same `DatetimeIndex`.
+Use `common_date_range(qis_return_df, portfolio_return_df)` (in `loaders.py`) to obtain the 2020-onward overlap whenever both DataFrames are needed together.
+
+Factor data (`factors_df`) is deferred — `factors_path` is set to `null` in `settings.yaml`. Do not add code that depends on it without updating this contract first.
 
 ## Implementation Roadmap
 
