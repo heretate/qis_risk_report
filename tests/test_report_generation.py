@@ -18,10 +18,9 @@ def smoke_config(tmp_path):
     """Minimal settings.yaml with absolute paths to fixture CSVs."""
     cfg = {
         "data": {
-            "returns_path": str(FIXTURES / "returns_attribution_90d.csv"),
+            "qis_returns_path": str(FIXTURES / "returns_attribution_90d.csv"),
             "portfolio_returns_path": str(FIXTURES / "portfolio_returns.csv"),
             "weights_path": str(FIXTURES / "weights.csv"),
-            "factors_path": str(FIXTURES / "factors_90d.csv"),
         },
         "reports": {
             "output_dir": str(tmp_path / "reports"),

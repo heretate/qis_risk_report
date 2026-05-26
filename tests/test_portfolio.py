@@ -9,11 +9,13 @@ Fixtures:
 """
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
 from qis_risk_report.data.loaders import load_portfolio, load_weights
 from qis_risk_report.risk.portfolio import (
+    build_portfolio_contribution_grid,
     component_var,
     diversification_benefit,
     marginal_var,
@@ -208,3 +210,79 @@ def test_diversification_benefit_raises_on_degenerate_inputs(monkeypatch):
     w = pd.Series([0.5, 0.5], index=["a", "qis_total"])
     with pytest.raises(ValueError):
         diversification_benefit(df, w, confidence=CONFIDENCE)
+
+
+# ---------------------------------------------------------------------------
+# Task Group 4 — Allocation Sensitivity Grid
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def sensitivity_fixtures():
+    """Synthetic 60-day QIS + portfolio DataFrames for sensitivity grid tests."""
+    rng = np.random.default_rng(42)
+    n = 60
+    dates = pd.bdate_range("2022-01-03", periods=n)
+
+    sub_ret = rng.normal(0.0003, 0.007, (n, 4))
+    qis_df = pd.DataFrame(sub_ret, index=dates, columns=["sub1", "sub2", "sub3", "sub4"])
+    qis_df.index.name = "date"
+    qis_df["total"] = qis_df.mean(axis=1)
+
+    port_ret = rng.normal(0.0002, 0.010, (n, 5))
+    port_cols = ["inst1", "inst2", "inst3", "inst4", "inst5"]
+    port_df = pd.DataFrame(port_ret, index=dates, columns=port_cols)
+    port_df.index.name = "date"
+    port_df["qis_total"] = qis_df["total"].values
+
+    weights_data = {
+        "inst1": 0.20, "inst2": 0.20, "inst3": 0.15,
+        "inst4": 0.15, "inst5": 0.10, "qis_total": 0.20,
+    }
+    w_df = pd.DataFrame([weights_data], index=[dates[-1]])
+    w_df.index.name = "date"
+
+    return qis_df, port_df, w_df
+
+
+def test_grid_shape(sensitivity_fixtures):
+    qis_df, port_df, w_df = sensitivity_fixtures
+    weights_list = [0.01, 0.05]
+    grid = build_portfolio_contribution_grid(qis_df, port_df, w_df, weights_list)
+    assert grid.shape == (2, 5)
+
+
+def test_grid_index_labels(sensitivity_fixtures):
+    qis_df, port_df, w_df = sensitivity_fixtures
+    weights_list = [0.01, 0.05]
+    grid = build_portfolio_contribution_grid(qis_df, port_df, w_df, weights_list)
+    assert list(grid.index) == ["1.0%", "5.0%"]
+
+
+def test_grid_columns(sensitivity_fixtures):
+    qis_df, port_df, w_df = sensitivity_fixtures
+    grid = build_portfolio_contribution_grid(qis_df, port_df, w_df, [0.01])
+    expected_cols = {
+        "standalone_var", "marginal_var", "component_var_share",
+        "correlation", "diversification_benefit",
+    }
+    assert set(grid.columns) == expected_cols
+
+
+def test_grid_values_finite(sensitivity_fixtures):
+    qis_df, port_df, w_df = sensitivity_fixtures
+    grid = build_portfolio_contribution_grid(qis_df, port_df, w_df, [0.01, 0.025, 0.05, 0.10])
+    assert np.isfinite(grid.values).all(), f"Non-finite values found:\n{grid}"
+
+
+def test_grid_standalone_var_positive(sensitivity_fixtures):
+    qis_df, port_df, w_df = sensitivity_fixtures
+    grid = build_portfolio_contribution_grid(qis_df, port_df, w_df, [0.01, 0.05])
+    assert (grid["standalone_var"] > 0).all()
+
+
+def test_grid_component_var_share_increases_with_weight(sensitivity_fixtures):
+    """Higher QIS allocation should generally mean higher component VaR share."""
+    qis_df, port_df, w_df = sensitivity_fixtures
+    grid = build_portfolio_contribution_grid(qis_df, port_df, w_df, [0.01, 0.05, 0.10])
+    assert grid["component_var_share"].iloc[-1] > grid["component_var_share"].iloc[0]

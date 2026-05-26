@@ -15,7 +15,10 @@ def load_returns(path: str) -> pd.DataFrame:
 
 
 def load_portfolio(path: str) -> pd.DataFrame:
-    """Load daily returns for the broader portfolio instruments plus qis_total."""
+    """Load daily returns for the broader portfolio instruments plus qis_total.
+
+    Portfolio data starts from 2020; do not attempt to back-fill before that date.
+    """
     if not os.path.exists(path):
         raise FileNotFoundError(f"portfolio_returns file not found: {path}")
     df = pd.read_csv(path, index_col=0, parse_dates=True)
@@ -35,11 +38,21 @@ def load_weights(path: str) -> pd.DataFrame:
     return df
 
 
+def common_date_range(
+    qis_return_df: pd.DataFrame,
+    portfolio_return_df: pd.DataFrame,
+) -> tuple[pd.Timestamp, pd.Timestamp]:
+    """Return the overlapping (start, end) date range between the two DataFrames."""
+    start = max(qis_return_df.index[0], portfolio_return_df.index[0])
+    end = min(qis_return_df.index[-1], portfolio_return_df.index[-1])
+    return start, end
+
+
 def load_factors(path: str) -> pd.DataFrame:
     """Load factor returns for attribution analysis.
 
     Expected columns: carry, momentum, value, volatility
-    Index: DatetimeIndex, same date range as returns_df, tz-naive
+    Index: DatetimeIndex, same date range as qis_return_df, tz-naive
     """
     df = pd.read_csv(path, index_col=0, parse_dates=True)
     _validate_factors(df)
@@ -57,9 +70,9 @@ def _validate_factors(df: pd.DataFrame) -> None:
 
 def _validate_returns(df: pd.DataFrame) -> None:
     if "total" not in df.columns:
-        raise ValueError("returns_df: missing required column 'total'")
+        raise ValueError("qis_return_df: missing required column 'total'")
     if not isinstance(df.index, pd.DatetimeIndex):
-        raise ValueError("returns_df: index must be a DatetimeIndex")
+        raise ValueError("qis_return_df: index must be a DatetimeIndex")
 
 
 def _validate_weights(df: pd.DataFrame) -> None:

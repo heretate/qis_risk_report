@@ -1,8 +1,8 @@
 data:
-  returns_path: data/returns.csv
+  qis_returns_path: data/returns.csv
   portfolio_returns_path: data/portfolio_returns.csv
   weights_path: data/weights.csv
-  factors_path: data/factors.csv
+  factors_path: null  # deferred — factor attribution not yet implemented
 
 reports:
   output_dir: reports
@@ -21,3 +21,8 @@ risk_free_rate: 0.0
 synthetic_shocks:
   spot_shocks: [-0.05, -0.025, 0.0, 0.025, 0.05]
   vol_shocks: [-0.20, 0.0, 0.20]
+
+# Hypothetical QIS weight levels used to build the portfolio contribution sensitivity grid.
+# Each value represents the fraction of the total portfolio allocated to the QIS strategy;
+# non-QIS instrument weights are scaled proportionally to sum to (1 - qis_weight).
+hypothetical_qis_weights: [0.01, 0.025, 0.05, 0.10]

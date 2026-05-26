@@ -42,19 +42,19 @@ def rolling_ols_attribution(
 
 
 def attribute_all(
-    returns_df: pd.DataFrame,
+    qis_return_df: pd.DataFrame,
     factors_df: pd.DataFrame,
     window: int = 60,
 ) -> dict[str, pd.DataFrame]:
-    """Apply rolling OLS attribution to every column in returns_df."""
+    """Apply rolling OLS attribution to every column in qis_return_df."""
     return {
-        col: rolling_ols_attribution(returns_df[col], factors_df, window=window)
-        for col in returns_df.columns
+        col: rolling_ols_attribution(qis_return_df[col], factors_df, window=window)
+        for col in qis_return_df.columns
     }
 
 
 def contribution_decomposition(
-    returns_df: pd.DataFrame,
+    qis_return_df: pd.DataFrame,
     weights: pd.Series | None = None,
 ) -> pd.DataFrame:
     """Compute each subcomponent's contribution to total return per date.
@@ -63,21 +63,21 @@ def contribution_decomposition(
     Accepts an optional weights Series (must sum to 1); defaults to equal
     weights across all non-'total' columns.
     """
-    sub_cols = [c for c in returns_df.columns if c != "total"]
+    sub_cols = [c for c in qis_return_df.columns if c != "total"]
     if weights is None:
         w = pd.Series(1.0 / len(sub_cols), index=sub_cols)
     else:
         w = weights.reindex(sub_cols)
 
-    contrib = returns_df[sub_cols].multiply(w, axis="columns")
+    contrib = qis_return_df[sub_cols].multiply(w, axis="columns")
     contrib["total"] = contrib.sum(axis=1)
     return contrib
 
 
 def cumulative_contribution(
-    returns_df: pd.DataFrame,
+    qis_return_df: pd.DataFrame,
     weights: pd.Series | None = None,
 ) -> pd.DataFrame:
     """Cumulative contribution series alongside daily contributions."""
-    daily = contribution_decomposition(returns_df, weights=weights)
+    daily = contribution_decomposition(qis_return_df, weights=weights)
     return daily.cumsum()
